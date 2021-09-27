@@ -6,14 +6,14 @@ import pandas as pd
 global T
 global datapath
 
-
-def initialize_set_A(task_length,data_path,lamb,net):
+from numpy import linalg as LA
+def initialize_set_A(task_length,data_path,lamb,net,eps,d_feature):
     global T
     T= task_length
     global datapath
     datapath = data_path
     total_experts,ct=get_details_for_total_experts();
-    print("total experts", total_experts,"length",ct)
+    # print("total experts", total_experts,"length",ct)
     data = get_data_by_Ct(ct)
 
     A=[]
@@ -23,8 +23,9 @@ def initialize_set_A(task_length,data_path,lamb,net):
         p=1
         lamb =lamb
         net = net
-        print("i",i,"cur_data",cur_data,'len',length)
+        # print("i",i,"cur_data",cur_data,'len',length)
         expert = Expert(t=1,length=length,data=cur_data,net=net,lamb = lamb,p=p)
+        expert.get_eta(eps,d_feature)
         A.append(expert)
     # print("total experts", total_experts, "length", ct)
     #
@@ -36,7 +37,7 @@ def update_data_in_A_at_t(A,t,lamb,net):
     data = get_data_by_Ct(ct)
     active_number = len(ct) # If In is active at time t, In-1 must active.So we only need to know how many the length l in the ct set.
 
-    for i in range(ct):
+    for i in range(len(ct)):
         cur_expert = A[i]
         length = len(ct[i])
         update_data = data[str(length)]
@@ -61,7 +62,8 @@ class Expert:
         self.net = net # theta
         self.lamb = lamb
         self.p = p
-        # self.p = random.uniform(0, 1)
+        self.ft = None
+        self.meta_loss = None
 
     def get_X_by_inds(self, array, d_feature):
         frames = []
@@ -86,10 +88,11 @@ class Expert:
         X_buffer = list()
         for target_array in target_arraies:
             X_buffer.append(self.get_X_by_inds(target_array, d_feature))
-        print("xbuffer",X_buffer)
+        # print("xbuffer",X_buffer)
 
         S = math.sqrt(1 + 2 * eps) - 1
-        G = max(math.sqrt(d_feature) + S, max(X_buffer))
+        # G = max(math.sqrt(d_feature) + S, max(X_buffer))
+        G = max(math.sqrt(d_feature+1) + S, LA.norm(X_buffer))
         self.S = S
         self.G = G
         self.eta = S / (G * math.sqrt(self.length))
@@ -122,13 +125,13 @@ def get_C_t(t):
     :return: C_t, a subset of dgc
     """
     interval_inds = dgc()
-    print("interval_inds",interval_inds)
+    # print("interval_inds",interval_inds)
     C_t = list()
     for item in interval_inds:
         if item[0] == t:
             C_t.append(item)
 
-    print('C_t: ', C_t)
+    # print('C_t: ', C_t)
     return C_t
 def get_details_for_total_experts():
     """
@@ -145,7 +148,7 @@ def get_data_by_Ct(C_t):
     ans = {'ct': C_t}
     for indset in C_t:
         key = str(len(indset))
-        print("now key",key)
+        # print("now key",key)
         frames = []
         for index in indset:
             pos_df = pd.read_csv(datapath + '/task' + str(index) + '/pos.csv')
@@ -154,7 +157,7 @@ def get_data_by_Ct(C_t):
             frames.append(df)
         values = pd.concat(frames)
         ans[key] = values
-    print(ans)
+    # print(ans)
     return ans
 
 

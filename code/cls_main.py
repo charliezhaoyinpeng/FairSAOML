@@ -24,14 +24,15 @@ def get_parameter():
     parser.add_argument("--pd_updates", default=1, type=int, help="inner primal-dual iteration")
     parser.add_argument("--eta_1", default=0.001, type=float, help="step size of inner primal update for validation model")
     parser.add_argument("--eta_2", default=0.001, type=float, help="step size of inner dual update for validation model")
-    parser.add_argument("--num_iterations", default=100, type=int, help="outer iteration")
+    parser.add_argument("--num_iterations", default=2, type=int, help="outer iteration")
     parser.add_argument("--xi", default=0.015, type=float, help="parameter of outer regularization")
-    parser.add_argument("--delta", default=50, type=int, help="some constant for outer augmentation")
+    # parser.add_argument("--delta", default=50, type=int, help="some constant for outer augmentation")
     parser.add_argument("--eps", default=0.05, type=float, help="fairness threshold")
-    parser.add_argument("--d_feature", default=100, type=int, help="feature size of the data set. for example, cls_syn_data:2; adult:16; communities_and_crime:100; bank:16; census_income:36")
+    parser.add_argument("--d_feature", default=2, type=int, help="feature size of the data set. for example, cls_syn_data:2; adult:16; communities_and_crime:100; bank:16; census_income:36")
     parser.add_argument("--data_path", default=r'C:\Users\fengm\Desktop\pdrftml\data\data', type=str, help="root to all dataset")
     parser.add_argument("--dataset", default=r'syn_cls', type=str, help="dataset folder name")
     parser.add_argument("--save", default=r'C:\Users\fengm\Desktop\pdrftml\output_new', type=str, help="save location")
+    parser.add_argument("--meta_batch", default=4,type=int, help="save location")
     parser = parser.parse_args()
     return  parser
 
@@ -41,8 +42,8 @@ if __name__ == "__main__":
     lamb = random.choice([0.0001, 0.001, 0.01, 0.1, 1])  # lambda initialization
     parser = get_parameter()
     val_batch_size = parser.val_batch_size  # data points for validation
-    K = parser  # few shots in support
-    Kq = parser  # shots for query
+    K = parser.K  # few shots in support
+    Kq = parser.Kq  # shots for query
     inner_steps = parser.inner_steps  # gradient steps in the inner loop
     pd_updates = parser.pd_updates  # inner primal-dual iteration
     num_iterations = parser.num_iterations  # outer iteration
@@ -50,15 +51,15 @@ if __name__ == "__main__":
 
     eta_1 = parser.eta_1  # step size of inner primal update
     eta_2 = parser.eta_1  # step size of inner dual update
-    eta_3 = 0.001  # step size of outer primal update
-    eta_4 = 0.001  # step size of outer dual update
+    # eta_3 = 0.001  # step size of outer primal update
+    # eta_4 = 0.001  # step size of outer dual update
     xi = parser.xi  # parameter of outer regularization
-    delta = parser.delta  # some constant for outer augmentation
+    # delta = parser.delta  # some constant for outer augmentation
     eps = parser.eps  # fairness threshold
     # eps = 0.35  # new fairness threshold
     num_neighbors = 3
 
-    # cls_syn_data:2; adult:16; communities_and_crime:100; bank:16; census_income:36
+    # cls_syn_data:2; adult:16; communities_and_crime:100; bank:16; census_income:36 Syn_cls 2
     d_feature = parser.d_feature  # feature size of the data set
     data_path = parser.data_path
     dataset = parser.dataset
@@ -73,7 +74,7 @@ if __name__ == "__main__":
     pdrftml(d_feature, lamb, tasks, data_path, dataset, save,
             K, Kq, val_batch_size, num_neighbors,
             num_iterations, inner_steps, pd_updates, meta_batch,
-            eta_1, eta_2, eta_3, eta_4, delta, eps, xi)
+            eta_1, eta_2, eps, xi)
     cost_time_in_second = time.time() - start
     running_time(cost_time_in_second)
 

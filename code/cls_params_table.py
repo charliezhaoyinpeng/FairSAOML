@@ -4,7 +4,7 @@ from texttable import Texttable
 def hyper_params(d_feature, lamb, dataset,
                  K, Kq, val_batch_size, num_neighbors,
                  num_iterations, inner_steps, pd_updates, meta_batch,
-                 eta_1, eta_2, eta_3, eta_4, delta, eps, xi):
+                 eta_1, eta_2, eps, xi):
     table = Texttable()
     table.set_deco(Texttable.HEADER)
     table.set_cols_align(["l", "l"])
@@ -23,9 +23,7 @@ def hyper_params(d_feature, lamb, dataset,
         ["Meta batches", meta_batch],
         ["eta_1", eta_1],
         ["eta_2", eta_2],
-        ["eta_3", eta_3],
-        ["eta_4", eta_4],
-        ["delta", delta],
+        # ["delta", delta],
         ["eps", eps],
         ["xi", xi]
     ])

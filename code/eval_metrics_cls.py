@@ -71,8 +71,8 @@ def cal_dbc(input_zy):
 #     return sum / length
 
 def cal_dbc(z,yhat):
-    print("z",z)
-    print("yhat",yhat)
+    # print("z",z)
+    # print("yhat",yhat)
     if len(z)!=len(yhat):
         print("dbc error")
         return
@@ -83,9 +83,9 @@ def cal_dbc(z,yhat):
             # print("noe1",item)
             countz +=1;
     p1 = (countz*1.0)/length;
-    print("count_z",countz)
-    print("p1", p1)
-    print("length",length)
+    # print("count_z",countz)
+    # print("p1", p1)
+    # print("length",length)
     sum = 0;
     for i in range(len(z)):
         cur_z = z[i]

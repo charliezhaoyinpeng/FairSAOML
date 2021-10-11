@@ -60,20 +60,20 @@ def meta_update_for_experts(t, d_feature,
                 num_iterations, inner_steps, pd_updates,
                 eps, xi,radius,meta_eta_1,meta_eta_2):
     delta_t = 0.001 # need change later
-    t= time.time()
+    t1 = time.time()
     for iter in range(1, num_iterations + 1):
+        # print(type(meta_lamb))
 
         for expert in experts[:active_amount]:
             expert_data = copy.deepcopy(expert.data)
             task = seperated_by_class_if_needed(expert_data)
             expert_eta = expert.eta
-            lamb = expert.lamb
-
             expert_level_supporting(t, d_feature, expert, task,K, Kq, num_neighbors,inner_steps, pd_updates,expert_eta, eps, xi)
         meta_loss = 0;
         for expert in experts:
+            lamb = expert.lamb
             t_loss, t_fair, t_acc, t_dp, t_eop, t_disc, t_cons = expert_level_quering(t, d_feature, expert, task,K, Kq, num_neighbors,inner_steps, pd_updates,expert_eta, eps, xi)
-            expert.expert_query_loss = (t_loss + lamb * t_fair - (delta_t / 2) * (lamb ** 2))
+            expert.expert_query_loss = (t_loss + lamb * t_fair - (delta_t / 2) * (expert.lamb ** 2))
             # print("fair",t_fair)
             meta_loss += (expert.expert_query_loss) * (expert.p)
             # if type(t_fair) is not str:  ########## @@@@@@@@@@@@@
@@ -101,10 +101,6 @@ def meta_update_for_experts(t, d_feature,
         weights = list(nn.parameter.Parameter(item) for item in weights)
 
         meta_net.assign(weights)
-
-
-
-
         print(lamb)
         print(meta_lamb)
 
@@ -115,7 +111,7 @@ def meta_update_for_experts(t, d_feature,
             meta_lamb = torch.tensor([0], requires_grad=True, dtype=torch.float)
 
             # update RC for each expert:
-    print("time in the number of iteration",time.time()-t)
+    print("time in the number of iteration",time.time()-t1)
     count =1
     for expert in experts:
         print("******"+str(count)+" expert")
@@ -214,7 +210,7 @@ def fairSAOML(d_feature, lamb, tasks, data_path, dataset, save,
     net = NN_init_0(d_feature)  # init by setting weights to 0
     # net = NN(d_feature) random init
     # weights = list(net.parameters())
-    lamb = copy.deepcopy(lamb)
+    # lamb = copy.deepcopy(lamb)
     T = len(tasks)
     res = []
     dataset_full_path = os.path.join(data_path , dataset)

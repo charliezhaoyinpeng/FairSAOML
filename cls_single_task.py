@@ -194,11 +194,7 @@ def expert_level_supporting(t, d_feature, expert, task,
                           expert_eta, eps, xi):
 
     temp_weights = [w.clone() for w in list(expert.net.parameters())]
-    try:
-        temp_lambda = torch.tensor([copy.deepcopy(expert.lamb)], requires_grad=True, dtype=torch.float)
-    except:
-        temp_lambda = expert.lamb.clone()
-
+    temp_lambda =expert.lamb
 
     task0 = task[0]
     task1 = task[1]
@@ -208,13 +204,13 @@ def expert_level_supporting(t, d_feature, expert, task,
     X_s = pd.concat([X0_s, X1_s]).values
     y_s = pd.concat([y0_s, y1_s]).values
     z_s = pd.concat([z0_s, z1_s]).values
-    z_bar = np.mean(z_s) * np.ones((len(z_s), 1))
+    # z_bar = np.mean(z_s) * np.ones((len(z_s), 1))
 
     X_s = torch.tensor(X_s, dtype=torch.float).unsqueeze(1)
     y_s = torch.tensor(y_s, dtype=torch.float).unsqueeze(1)
     ones = torch.tensor(np.ones((len(y_s), 1)), dtype=torch.float).unsqueeze(1)
     z_s = torch.tensor(z_s, dtype=torch.float).unsqueeze(1)
-    z_bar = torch.tensor(z_bar, dtype=torch.float).unsqueeze(1)
+    # z_bar = torch.tensor(z_bar, dtype=torch.float).unsqueeze(1)
     # print("X_s",X_s)
 
     for co_update in range(pd_updates):
@@ -262,10 +258,6 @@ def expert_level_quering(t, d_feature, expert, task,
                                 inner_steps, pd_updates,
                                 expert_eta, eps, xi):
     temp_weights = [w.clone() for w in list(expert.net.parameters())]
-    # try:
-    #     temp_lambda = torch.tensor([copy.deepcopy(expert.lamb)], requires_grad=True, dtype=torch.float)
-    # except:
-    #     temp_lambda = expert.lamb.clone()
 
     criterion = nn.BCELoss()
 
@@ -282,12 +274,12 @@ def expert_level_quering(t, d_feature, expert, task,
     X_temp = copy.deepcopy(X_q)
     z_temp = copy.deepcopy(z_q)
     y_temp = copy.deepcopy(y_q)
-    z_bar = np.mean(z_q) * np.ones((len(z_q), 1))
+    # z_bar = np.mean(z_q) * np.ones((len(z_q), 1))
 
     X_q = torch.tensor(X_q, dtype=torch.float).unsqueeze(1)
     y_q = torch.tensor(y_q, dtype=torch.float).unsqueeze(1)
     z_q = torch.tensor(z_q, dtype=torch.float).unsqueeze(1)
-    z_bar = torch.tensor(z_bar, dtype=torch.float).unsqueeze(1)
+    # z_bar = torch.tensor(z_bar, dtype=torch.float).unsqueeze(1)
 
 
     y_hat = expert.net.parameterised(X_q, temp_weights)
@@ -303,7 +295,7 @@ def expert_level_quering(t, d_feature, expert, task,
 
     input_zy = np.column_stack((z_temp, y_hat))
     z_y_hat_y = np.column_stack((input_zy, y_temp))
-    yX = np.column_stack((y_hat, X_temp))
+    # yX = np.column_stack((y_hat, X_temp))
 
     accuracy = accuracy_score(y_hat.round(), y_q)
     dp = cal_dp(input_zy, t-1, xi)

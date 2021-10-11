@@ -83,7 +83,7 @@ def cal_dbc(z,yhat):
         return
     length = len(z)
     countz =0;
-    print("z",z)
+    # print("z",z)
     for item in z:
         if item==1:
             # print("noe1",item)

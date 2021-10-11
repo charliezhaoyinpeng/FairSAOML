@@ -15,7 +15,7 @@ from cls_single_task import *
 from cls_params_table import *
 from utils import *
 seed = 34
-np.random.seed(seed) #全换成0或者保持这个都试一下
+np.random.seed(seed) #???0??????????
 torch.manual_seed(seed)
 
 
@@ -71,9 +71,9 @@ def meta_update_for_experts(t, d_feature,
             expert_level_supporting(t, d_feature, expert, task,K, Kq, num_neighbors,inner_steps, pd_updates,expert_eta, eps, xi)
         meta_loss = 0;
         for expert in experts:
-            lamb = expert.lamb
+            # lamb = expert.lamb
             t_loss, t_fair, t_acc, t_dp, t_eop, t_disc, t_cons = expert_level_quering(t, d_feature, expert, task,K, Kq, num_neighbors,inner_steps, pd_updates,expert_eta, eps, xi)
-            expert.expert_query_loss = (t_loss + lamb * t_fair - (delta_t / 2) * (expert.lamb ** 2))
+            expert.expert_query_loss = (t_loss + expert.lamb * t_fair - (delta_t / 2) * (expert.lamb ** 2))
             # print("fair",t_fair)
             meta_loss += (expert.expert_query_loss) * (expert.p)
             # if type(t_fair) is not str:  ########## @@@@@@@@@@@@@
@@ -94,14 +94,14 @@ def meta_update_for_experts(t, d_feature,
         temp_weights = [w.clone() for w in weights]
         weights = [w - meta_eta_1 * g for w, g in zip(temp_weights, meta_grads)]
         weights_norm = meta_net.e_norm(weights) ########## @@@@@@@@@@@@@
-        if weights_norm > radius: ########## @@@@@@@@@@@@@ 改成一个参数 radius
+        if weights_norm > radius: ########## @@@@@@@@@@@@@ ?????? radius
             weights = list(nn.parameter.Parameter(item / weights_norm) for item in weights)
         else:
             weights = list(nn.parameter.Parameter(item) for item in weights)
         weights = list(nn.parameter.Parameter(item) for item in weights)
 
         meta_net.assign(weights)
-        print(lamb)
+        # print(lamb)
         print(meta_lamb)
 
         grad_lamb = torch.autograd.grad(meta_loss, meta_lamb)

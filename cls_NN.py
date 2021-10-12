@@ -21,6 +21,7 @@ class NN(nn.Module):
         # like forward, but uses ``weights`` instead of ``model.parameters()``
         # it'd be nice if this could be generated automatically for any nn.Module...
         x = nn.functional.linear(x, weights[0], weights[1])
+
         x = nn.functional.relu(x)
         x = nn.functional.linear(x, weights[2], weights[3])
         x = nn.functional.relu(x) #

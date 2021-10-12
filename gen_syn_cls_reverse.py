@@ -181,8 +181,8 @@ def generate_tasks(save, num_tasks):
 
 
 if __name__ == "__main__":
-    save = r"./data/data/syn_cls_reverse"
-    n_samples = 1000  # generate these many data points per task
+    save = r"./data/data/syn_cls_reverse_medium"
+    n_samples = 2000  # generate these many data points per task
     num_tasks = 512
 
     generate_tasks(save, num_tasks)

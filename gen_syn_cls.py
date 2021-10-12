@@ -180,8 +180,8 @@ def generate_tasks(save, num_tasks):
 
 
 if __name__ == "__main__":
-    save = r"./data/data/syn_cls"
-    n_samples = 1000  # generate these many data points per task
-    num_tasks = 512
+    save = r"./data/data/syn_cls_tiny"
+    n_samples = 300  # generate these many data points per task
+    num_tasks = 64
 
     generate_tasks(save, num_tasks)

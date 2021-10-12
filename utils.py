@@ -2,10 +2,10 @@ import numpy as np
 from numpy import linalg as LA
 import random, math
 import pandas as pd
-
+import copy
 global T
 global datapath
-
+import  torch
 from numpy import linalg as LA
 import os
 
@@ -47,8 +47,9 @@ def update_experts_at_t(A, t, lamb, net):
     data = get_data_by_Ct(ct)
     active_number = len(
         ct)  # If In is active at time t, In-1 must active.So we only need to know how many the length l in the ct set.
+    print("@@@@@@current time",t,"active_number",active_number)
 
-    for i in range(len(ct)):
+    for i in range(active_number):
         cur_expert = A[i]
         length = len(ct[i])
         if (t-1)%length ==0:  # means the current expert at the start of CI
@@ -57,7 +58,10 @@ def update_experts_at_t(A, t, lamb, net):
         update_data = data[str(length)]
         cur_expert.t = t
         cur_expert.data = update_data
-        cur_expert.net = net
+        # temp_weights = [w.clone() for w in list(net.parameters())]
+        # cur_expert.net = net
+        temp_weights = [w.clone() for w in list(net.parameters())]
+        cur_expert.weights = temp_weights
         cur_expert.lamb = lamb
         cur_expert.update_S_G_eta()
 
@@ -77,16 +81,16 @@ class Expert:
         self.C = 0
         # self.theta = theta
         self.net = net  # theta
+        temp_weights = [w.clone() for w in list(net.parameters())]
+        self.weights =temp_weights
         self.lamb = lamb
         self.p = p
-        self.ft = None
-        self.expert_query_loss = None
+        # self.ft = None
         self.eps=eps
         self.d_feature=d_feature
 
     def print_expert(self):
-        print("expert CI length: ", self.length, " R: ", self.R, " C: ", self.C, " lamb: ", self.lamb, " p: ", self.p, " ft: ",
-              self.ft, "meta loss:", self.expert_query_loss)
+        print("expert CI length: ", self.length, " R: ", float(self.R), " C: ", float(self.C), " lamb: ", float(self.lamb), " p: ",float(self.p))
 
     def get_X_by_inds(self, array, d_feature):
         frames = []

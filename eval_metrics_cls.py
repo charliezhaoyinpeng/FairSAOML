@@ -113,7 +113,8 @@ def cal_dp(input_zy, t, xi):
             if item[1].round() == 1:
                 count2 += 1
     try:
-        dp = abs(1 - count2 * 1.0 / count1) + t * rd() * xi
+        # dp = abs(1 - count2 * 1.0 / count1) + t * rd() * xi
+        dp = abs(1 - count2 * 1.0 / count1)
     except:
         dp = 0
     return dp
@@ -128,7 +129,8 @@ def cal_eop(z_y_hat_y, t, xi):
             if item[1].round() == 1:
                 count2 += 1
     try:
-        eop = abs(1 - count2 * 1.0 / count1) + t * rd() * xi
+        # eop = abs(1 - count2 * 1.0 / count1) + t * rd() * xi
+        eop = abs(1 - count2 * 1.0 / count1)
     except:
         eop = 0
     return eop

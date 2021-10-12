@@ -15,7 +15,7 @@ from cls_single_task import *
 from cls_params_table import *
 from utils import *
 seed = 34
-np.random.seed(seed) #???0??????????
+np.random.seed(seed) #全换成0或者保持这个都试一下
 torch.manual_seed(seed)
 
 
@@ -58,66 +58,100 @@ def updata_P_in_experts(experts):
 def meta_update_for_experts(t, d_feature,
                 meta_net,meta_lamb,experts,active_amount, num_neighbors,K,Kq,
                 num_iterations, inner_steps, pd_updates,
-                eps, xi,radius,meta_eta_1,meta_eta_2):
-    delta_t = 0.001 # need change later
-    t1 = time.time()
-    for iter in range(1, num_iterations + 1):
+                eps, xi,radius,meta_eta_1,meta_eta_2,delta):
+    # delta = 0.01 # need change later 10 100
+    # print("%%%%",meta_eta_1,meta_eta_2)
+    temp1= list(meta_net.parameters())
+
+    try:
+        temp_weights = [torch.tensor([copy.deepcopy(w)], requires_grad=True, dtype=torch.float) for w in
+                        temp1]
+    except:
+        temp_weights = [w.clone() for w in temp1]
+
+    try:
+        temp_lambda = torch.tensor([copy.deepcopy(meta_lamb)], requires_grad=True, dtype=torch.float)
+    except:
+        temp_lambda = meta_lamb
+    print("temp_lambda",float(temp_lambda))
+
+    for iter in range(1, num_iterations + 5):
         # print(type(meta_lamb))
 
         for expert in experts[:active_amount]:
             expert_data = copy.deepcopy(expert.data)
             task = seperated_by_class_if_needed(expert_data)
             expert_eta = expert.eta
-            expert_level_supporting(t, d_feature, expert, task,K, Kq, num_neighbors,inner_steps, pd_updates,expert_eta, eps, xi)
+            expert_level_supporting(t, d_feature, expert, task,K, Kq, num_neighbors,inner_steps, pd_updates,expert_eta, eps, xi,radius)
         meta_loss = 0;
+        meta_grad_weights=None
+        meta_grad_lambda = None
         for expert in experts:
             # lamb = expert.lamb
-            t_loss, t_fair, t_acc, t_dp, t_eop, t_disc, t_cons = expert_level_quering(t, d_feature, expert, task,K, Kq, num_neighbors,inner_steps, pd_updates,expert_eta, eps, xi)
-            expert.expert_query_loss = (t_loss + expert.lamb * t_fair - (delta_t / 2) * (expert.lamb ** 2))
-            # print("fair",t_fair)
-            meta_loss += (expert.expert_query_loss) * (expert.p)
-            # if type(t_fair) is not str:  ########## @@@@@@@@@@@@@
-            #     expert_query_loss = (t_loss + lamb * t_fair - (delta_t * meta_eta_2 / 2) * (lamb ** 2))  ########## @@@@@@@@@@@@@
-            # else:
-            #     expert_query_loss = (t_loss - (delta_t / 2) * (lamb ** 2)) ########## @@@@@@@@@@@@@
+            query_grad_weights,query_grad_lambda = expert_level_quering(t, d_feature, expert, task,K, Kq, num_neighbors,inner_steps, pd_updates,expert_eta, eps, xi,delta,radius)
+            if meta_grad_weights ==None:
+                # print(query_grad_weights)
+                temp = [w.clone()*expert.p for w in query_grad_weights]
+                meta_grad_weights=temp
+            else:
+                temp = [w.clone() * expert.p for w in query_grad_weights]
+                meta_grad_weights += temp
+            if meta_grad_lambda == None:
+                meta_grad_lambda = torch.mul(query_grad_lambda[0],expert.p)
+            else:
+                meta_grad_lambda+=torch.mul(query_grad_lambda[0],expert.p)
 
-            # expert.expert_query_loss =expert_query_loss
-            # print("meta_loss",meta_loss)
-
+        # print("query_grad_weights",query_grad_weights)
+        # print("query_grad_lambda", query_grad_lambda)
 
 
             #expert_query_loss = expert_query_loss #+ xi * (net.e_norm(weights)) ########## @@@@@@@@@@@@
-        weights = list(meta_net.parameters())
+        # weights = list(meta_net.parameters())
 
-        meta_grads = torch.autograd.grad(meta_loss, weights, retain_graph=True)
-        # print("pass")
-        temp_weights = [w.clone() for w in weights]
-        weights = [w - meta_eta_1 * g for w, g in zip(temp_weights, meta_grads)]
-        weights_norm = meta_net.e_norm(weights) ########## @@@@@@@@@@@@@
-        if weights_norm > radius: ########## @@@@@@@@@@@@@ ?????? radius
-            weights = list(nn.parameter.Parameter(item / weights_norm) for item in weights)
+        # print(meta_net)
+
+        # temp = [w.clone() for w in temp_weights]
+
+        temp_weights = [(w - meta_eta_1 * g) for w, g in zip(temp_weights, meta_grad_weights)]
+        weights_norm = meta_net.e_norm(temp_weights)
+
+        if weights_norm > radius: ########## @@@@@@@@@@@@@ 改成一个参数 radius
+            temp_weights = list(nn.parameter.Parameter(item / weights_norm) for item in temp_weights)
         else:
-            weights = list(nn.parameter.Parameter(item) for item in weights)
-        weights = list(nn.parameter.Parameter(item) for item in weights)
+            temp_weights = list(nn.parameter.Parameter(item) for item in temp_weights)
+        temp_weights = list(nn.parameter.Parameter(item) for item in temp_weights)
+        temp_weights = list(nn.parameter.Parameter(item) for item in temp_weights)
+        # print("!!!!****", weights)
 
-        meta_net.assign(weights)
+
+        # meta_net.assign(weights)
         # print(lamb)
-        print(meta_lamb)
+        # print(meta_lamb,meta_loss)
+        # print(temp_lambda)
+        # print("ok",grad_lamb)
+        temp_lambda = temp_lambda + meta_eta_2 * meta_grad_lambda[0]
 
-        grad_lamb = torch.autograd.grad(meta_loss, meta_lamb)
+        # grad_lamb = torch.autograd.grad(meta_loss, meta_lamb, retain_graph=False)
+        # meta_lamb = meta_lamb + meta_eta_2 * grad_lamb[0]
         # print("ok")
-        meta_lamb = meta_lamb + meta_eta_2 * grad_lamb[0]
-        if meta_lamb.item() < 0: ########## @@@@@@@@@@@@@
-            meta_lamb = torch.tensor([0], requires_grad=True, dtype=torch.float)
+
+        # meta_lamb = torch.tensor(temp_lambda)
+        # print("meta lamb update",meta_lamb)
+        # if meta_lamb.item() < 0: ########## @@@@@@@@@@@@@
+        #     meta_lamb = torch.tensor([0], requires_grad=True, dtype=torch.float)
 
             # update RC for each expert:
-    print("time in the number of iteration",time.time()-t1)
+
     count =1
     for expert in experts:
-        print("******"+str(count)+" expert")
+        # print("******"+str(count)+" expert")
         count = count+1
-        update_expert_RC(expert, meta_net, eps, Kq,d_feature)
-    print("pass all")
+        # print("123",list(expert.net.parameters()))
+        # print("!123",list(meta_net.parameters()))
+        update_expert_RC(expert, temp_weights,temp_lambda, eps, Kq,d_feature)
+    # print("pass all")
+    meta_net.assign(temp_weights)
+    meta_lamb = temp_lambda
 
     return meta_net, meta_lamb
 
@@ -202,17 +236,20 @@ def print_experts(t,experts):
 def fairSAOML(d_feature, lamb, tasks, data_path, dataset, save,
             K, Kq, val_batch_size, num_neighbors,
             num_iterations, inner_steps, pd_updates, meta_batch,
-            eta_1, eta_2, eps, xi,radius,meta_eta_1,meta_eta_2):
+            eta_1, eta_2, eps, xi,radius,meta_eta_1,meta_eta_2,delta):
     val_save_path = prep(save, d_feature, lamb, dataset,
                          K, Kq, val_batch_size, num_neighbors,
                          num_iterations, inner_steps, pd_updates, meta_batch,
                          eta_1, eta_2, eps, xi,radius)
-    net = NN_init_0(d_feature)  # init by setting weights to 0
-    # net = NN(d_feature) random init
+    # net = NN_init_0(d_feature)  # init by setting weights to 0
+    net = NN(d_feature) #random init
     # weights = list(net.parameters())
     # lamb = copy.deepcopy(lamb)
     T = len(tasks)
-    res = []
+    dp = []
+    eop=[]
+    acc=[]
+    loss=[]
     dataset_full_path = os.path.join(data_path , dataset)
     # set_A = []
     set_U = []
@@ -224,6 +261,7 @@ def fairSAOML(d_feature, lamb, tasks, data_path, dataset, save,
         task1 = pd.read_csv(os.path.join(data_path , dataset , 'task' + str(t) , r'pos.csv'))
 
         task = [task0, task1]
+        # print()
 
         # evaluation
         ###########################################################################################################################################################
@@ -232,13 +270,19 @@ def fairSAOML(d_feature, lamb, tasks, data_path, dataset, save,
                                                                                                                        K, val_batch_size, num_neighbors,
                                                                                                                        inner_steps, pd_updates,
                                                                                                                        eta_1, eta_2, eps, xi)
+
         cost_time = time.time() - start_time
         print("Val-Task %s/%s: acc:%s ;dp:%s; eop:%s; disc:%s" % (
             t, T, np.round(accuracy_val, 10), np.round(dp_val, 10), np.round(eop_val, 10),
             np.round(discrimination_val, 10)))
 
         # torch.save(net.state_dict(), model_save_path)
-        res.append([loss_val.item(), fair_val, accuracy_val, dp_val, eop_val, discrimination_val, consistency_val, cost_time])
+        # res.append([loss_val.item(), fair_val, accuracy_val, dp_val, eop_val, discrimination_val, consistency_val, cost_time])
+        dp.append(np.round(dp_val, 10))
+        eop.append(np.round(eop_val, 10))
+        acc.append(np.round(accuracy_val, 10))
+        loss.append(np.round(loss_val.detach().numpy(), 10))
+
 
         try:
             lamb = torch.tensor([copy.deepcopy(lamb)], requires_grad=True, dtype=torch.float)
@@ -265,10 +309,11 @@ def fairSAOML(d_feature, lamb, tasks, data_path, dataset, save,
         new_net, new_lamb = meta_update_for_experts(t, d_feature, net,lamb,set_U,active_amount,
                                          num_neighbors,K, Kq,
                                         num_iterations,inner_steps, pd_updates,
-                                        eps, xi,radius,meta_eta_1,meta_eta_2)
+                                        eps, xi,radius,meta_eta_1,meta_eta_2,delta)
 
         net = new_net
         lamb = new_lamb
 
     with open(val_save_path, 'wb') as f:
-        pickle.dump(res, f)
+        pickle.dump([dp,eop,acc,loss], f)
+    return dp,eop,acc,loss

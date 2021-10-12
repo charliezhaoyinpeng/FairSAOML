@@ -241,9 +241,9 @@ def expert_level_supporting(t, d_feature, expert, task,
             grad = torch.autograd.grad(loss.sum(), temp_weights, retain_graph=True)
             temp_weights = [w - expert_eta * g for w, g in zip(temp_weights, grad)]
 
-            temp_weights_norm = expert.net.e_norm(temp_weights)
-            if temp_weights_norm > radius:
-                temp_weights = [w / expert.net.e_norm(temp_weights) for w in temp_weights]
+            # temp_weights_norm = expert.net.e_norm(temp_weights)
+            # if temp_weights_norm > radius:
+            #     temp_weights = [w / expert.net.e_norm(temp_weights) for w in temp_weights]
 
             y_hat = expert.net.parameterised(X_s, temp_weights)
             # fair = torch.abs(torch.mean((z_s - z_bar) * new_y_hat)) - eps

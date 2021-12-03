@@ -40,8 +40,11 @@ def mean(a):
 def validate_performance(t, d_feature, net, lamb, task,
                           K, Kq, num_neighbors,
                           inner_steps, pd_updates,
-                          eta_1, eta_2, eps, xi,radius):
+                          eta_1, eta_2, eps,shift_time,eta_1_shift,eta_2_shift):
     temp_weights = [w.clone() for w in list(net.parameters())]
+    if t> shift_time:
+        eta_1 = eta_1_shift
+        eta_2 = eta_2_shift
     try:
         temp_lambda = torch.tensor([copy.deepcopy(lamb)], requires_grad=True, dtype=torch.float)
     except:
@@ -68,8 +71,8 @@ def validate_performance(t, d_feature, net, lamb, task,
     z_bar = torch.tensor(z_bar, dtype=torch.float).unsqueeze(1)
     # print("X_s",X_s)
 
-    for co_update in range(pd_updates):
-        for step in range(inner_steps):
+    for co_update in range(2):
+        for step in range(3):
             y_hat = net.parameterised(X_s, temp_weights)
             fair = cal_dbc(torch.squeeze(z_s),torch.squeeze(y_hat))-eps
             # print(fair)
@@ -80,9 +83,9 @@ def validate_performance(t, d_feature, net, lamb, task,
             grad = torch.autograd.grad(loss.sum(), temp_weights, retain_graph=True)
             temp_weights = [w - eta_1 * g for w, g in zip(temp_weights, grad)]
 
-            temp_weights_norm = net.e_norm(temp_weights)
-            if temp_weights_norm > temp_weights:
-                temp_weights = [w / net.e_norm(temp_weights) for w in temp_weights]
+            # temp_weights_norm = net.e_norm(temp_weights)
+            # if temp_weights_norm > radius:
+            #     temp_weights = [w / net.e_norm(temp_weights) for w in temp_weights]
 
             new_y_hat = net.parameterised(X_s, temp_weights)
             # fair = torch.abs(torch.mean((z_s - z_bar) * new_y_hat)) - eps
@@ -117,7 +120,7 @@ def validate_performance(t, d_feature, net, lamb, task,
 
     y_hat = net.parameterised(X_q, temp_weights)
     loss = criterion(y_hat, y_q)
-    loss = loss / Kq
+    # loss = loss / Kq
 
     # fair = torch.abs(torch.mean((z_q - z_bar) * y_hat)).item()
     fair = cal_dbc(torch.squeeze(z_q), torch.squeeze(y_hat)) - eps
@@ -130,8 +133,8 @@ def validate_performance(t, d_feature, net, lamb, task,
     # yX = np.column_stack((y_hat, X_temp))
 
     accuracy = accuracy_score(y_hat.round(), y_q)
-    dp = cal_dp(input_zy, t-1, xi)
-    eop = cal_eop(z_y_hat_y, t-1, xi)
+    dp = cal_dp(input_zy)
+    eop = cal_eop(z_y_hat_y)
     discrimination = cal_discrimination(input_zy)*100
     # consistency = cal_consistency(yX, num_neighbors)
     consistency = 1
@@ -142,7 +145,7 @@ def validate_performance(t, d_feature, net, lamb, task,
     return loss, fair, accuracy, dp, eop, discrimination, consistency
 
 
-def update_expert_RC(expert,meta_weights,meta_lambda,eps,Kq,d_feature,radius):
+def update_expert_RC(expert,meta_weights,meta_lambda,eps,d_feature):
     # print("^^^^^^^^^^^^",[w.clone() for w in list(expert.net.parameters())],"888",[w.clone() for w in list(meta_net.parameters())])
 
 
@@ -198,7 +201,7 @@ def update_expert_RC(expert,meta_weights,meta_lambda,eps,Kq,d_feature,radius):
 def expert_level_supporting(t, d_feature, expert, task,
                           K, Kq, num_neighbors,
                           inner_steps, pd_updates,
-                          expert_eta, eps, xi,radius):
+                          expert_eta, eps):
     prev_weights = [w.clone() for w in expert.weights]
 
     # temp_weights = [torch.tensor([copy.deepcopy(w)], requires_grad=True, dtype=torch.float) for w in expert.weights]
@@ -254,7 +257,9 @@ def expert_level_supporting(t, d_feature, expert, task,
             grad_lamb = torch.autograd.grad(loss.sum(), temp_lambda)
             # print(grad_lamb, type(grad_lamb), grad_lamb[0])
             # print(eta_2 * grad_lamb)
-            temp_lambda = temp_lambda + expert_eta * grad_lamb[0]
+            temp_lambda = temp_lambda + 0.00001*expert_eta * grad_lamb[0]
+            # temp_lambda = temp_lambda + expert_eta * grad_lamb[0]
+            # temp_lambda=temp_lambda*0
             if temp_lambda.item() < 0:
                 temp_lambda = torch.tensor([0], requires_grad=True, dtype=torch.float)
     weights = list(nn.parameter.Parameter(item) for item in temp_weights)
@@ -275,7 +280,7 @@ def expert_level_supporting(t, d_feature, expert, task,
 def expert_level_quering(t, d_feature, expert, task,
                                 K, Kq, num_neighbors,
                                 inner_steps, pd_updates,
-                                expert_eta, eps, xi,delta):
+                                expert_eta, eps,delta):
     try:
         temp_weights = [torch.tensor([copy.deepcopy(w)], requires_grad=True, dtype=torch.float) for w in expert.weights]
     except:
@@ -285,6 +290,7 @@ def expert_level_quering(t, d_feature, expert, task,
         temp_lambda = torch.tensor([copy.deepcopy(expert.lamb)], requires_grad=True, dtype=torch.float)
     except:
         temp_lambda = expert.lamb.clone()
+
 
     criterion = nn.BCELoss()
 
@@ -314,6 +320,7 @@ def expert_level_quering(t, d_feature, expert, task,
     loss = criterion(y_hat, y_q)
     fair = (cal_dbc(torch.squeeze(z_q), torch.squeeze(y_hat)) - eps)
     delta_t= delta * expert_eta
+    temp_lambda=temp_lambda*0
     loss = (loss / Kq)+temp_lambda*fair - (delta_t / 2) * (temp_lambda ** 2)
     grad_weights = torch.autograd.grad(loss.sum(), temp_weights, retain_graph=True)
 

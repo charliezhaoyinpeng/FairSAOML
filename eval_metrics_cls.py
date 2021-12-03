@@ -46,13 +46,13 @@ def get_neighbors(yX, target_row, num_neighbors):
     return neighbors
 
 
-def cal_dbc(input_zy):
-    length = len(input_zy)
-    z_bar = np.mean(input_zy[:, 0])
-    dbc = 0
-    for zy in input_zy:
-        dbc += (zy[0] - z_bar) * zy[1] * 1.0
-    return abs(dbc / length)
+# def cal_dbc(input_zy):
+#     length = len(input_zy)
+#     z_bar = np.mean(input_zy[:, 0])
+#     dbc = 0
+#     for zy in input_zy:
+#         dbc += (zy[0] - z_bar) * zy[1] * 1.0
+#     return abs(dbc / length)
 
 # def cal_dbc(input_zy):
 #     length = len(input_zy)
@@ -101,10 +101,13 @@ def cal_dbc(z,yhat):
     sum = sum * 1/(p1*(1 - p1));
     output = sum / length
     output = torch.abs(output)
+    # if t>domain_shift:
+    #     output = output * 0.5
+    # output = output*0.5
 
     return output
 
-def cal_dp(input_zy, t, xi):
+def cal_dp(input_zy):
     count1 = 0
     count2 = 0
     for item in input_zy:
@@ -113,14 +116,13 @@ def cal_dp(input_zy, t, xi):
             if item[1].round() == 1:
                 count2 += 1
     try:
-        # dp = abs(1 - count2 * 1.0 / count1) + t * rd() * xi
         dp = abs(1 - count2 * 1.0 / count1)
     except:
         dp = 0
     return dp
 
 
-def cal_eop(z_y_hat_y, t, xi):
+def cal_eop(z_y_hat_y):
     count1 = 0
     count2 = 0
     for item in z_y_hat_y:
@@ -129,7 +131,6 @@ def cal_eop(z_y_hat_y, t, xi):
             if item[1].round() == 1:
                 count2 += 1
     try:
-        # eop = abs(1 - count2 * 1.0 / count1) + t * rd() * xi
         eop = abs(1 - count2 * 1.0 / count1)
     except:
         eop = 0

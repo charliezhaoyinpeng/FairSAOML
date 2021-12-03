@@ -68,7 +68,7 @@ def gen_gaussian_task(mu1, sigma1, mu2, sigma2, disc_factor):
     return X, y, z
 
 
-def data_noraml_save(X, y, z, task_ind):
+def data_noraml_save(X, y, z, task_ind,shift):
     """
     :param X: data feature matrix
     :param y: data labels
@@ -78,14 +78,33 @@ def data_noraml_save(X, y, z, task_ind):
     title = ["z", "y", "x1", "x2"]
     zy = np.column_stack((z, y))
     task = np.column_stack((zy, X))
-    task_norm = pd.DataFrame(task, columns=title)
+    task = pd.DataFrame(task, columns=title)
 
-    # task_norm = (task - task.mean()) / task.std()
-    # task_norm['z'] = task['z']
-    # task_norm['y'] = task['y']
+    task_norm = (task - task.mean()) / task.std()
+    if shift:
+        print(task_norm)
+        task_norm["x1"] = a*task_norm["x1"]+b
+        task_norm["x2"] = a*task_norm["x2"]+b
+        print(task_norm)
+
+    task_norm['z'] = task['z']
+    task_norm['y'] = task['y']
 
     task_norm_0 = task_norm[task_norm['y'] == 0]
     task_norm_1 = task_norm[task_norm['y'] == 1]
+
+
+
+    # print(task_norm)
+    # task_array = task_norm.values
+    # print(task_array)
+    # X = task_array[:,-2:]
+    # z = task_array[:,0]
+    # y = task_array[:,1]
+    # print("x",X)
+    # print(y)
+    # print(z)
+    # plot_data(X, y, z, 200, "Visualization of the Data Distribution")
 
 
     save_folder = save + '/task' + str(task_ind + 1)
@@ -110,9 +129,9 @@ def plot_data(X, y, z, num_to_draw, title):
     y_z_0 = y_draw[z_draw == 0.0]
     y_z_1 = y_draw[z_draw == 1.0]
 
-    plt.scatter(X_z_0[y_z_0 == 1.0][:, 0], X_z_0[y_z_0 == 1.0][:, 1], color='green', marker='x', s=30, linewidth=1.5,
+    plt.scatter(X_z_0[y_z_0 == 1.0][:, 0], X_z_0[y_z_0 == 1.0][:, 1], color='green', marker='x', s=2, linewidth=1.5,
                 label="ProtVar/+Pos")
-    plt.scatter(X_z_0[y_z_0 == 0.0][:, 0], X_z_0[y_z_0 == 0.0][:, 1], color='red', marker='x', s=30, linewidth=1.5,
+    plt.scatter(X_z_0[y_z_0 == 0.0][:, 0], X_z_0[y_z_0 == 0.0][:, 1], color='red', marker='x', s=2, linewidth=1.5,
                 label="ProtVar/-Neg")
     plt.scatter(X_z_1[y_z_1 == 1.0][:, 0], X_z_1[y_z_1 == 1.0][:, 1], color='green', marker='o', facecolors='none',
                 s=30, label="Non-ProtVar/+Pos")
@@ -145,15 +164,15 @@ def generate_one_task(task_ind):
     if task_ind + 1 <= num_tasks / 2:
         mu1, sigma1 = [-7, -7], [[5, 1], [1, 5]]
         mu2, sigma2 = [-3, -3], [[10, 1], [1, 3]]
-        X1, y1, z1 = gen_gaussian_task(mu1, sigma1, mu2, sigma2, disc_factor=math.pi / 8.0)
-        data_noraml_save(X1, y1, z1, task_ind)
+        X1, y1, z1 = gen_gaussian_task(mu1, sigma1, mu2, sigma2, disc_factor=disc_factor1)
+        data_noraml_save(X1, y1, z1, task_ind,False)
     # Generate tasks from the 2nd distribution
     else:
         mu1, sigma1 = [-7, -7], [[5, 1], [1, 5]]
         mu2, sigma2 = [-3, -3], [[10, 1], [1, 3]]
-        X2, y2, z2 = gen_gaussian_task(mu1, sigma1, mu2, sigma2, disc_factor=math.pi / 8.0)
-        X2 = X2*(-10)
-        data_noraml_save(X2, y2, z2, task_ind)
+        X2, y2, z2 = gen_gaussian_task(mu1, sigma1, mu2, sigma2, disc_factor=disc_factor2)
+        # X2 = X2*(-2)
+        data_noraml_save(X2, y2, z2, task_ind,True)
 
     # visualize the 1st and the 2nd data distribution using 200 data samples
     if task_ind == 0:
@@ -182,8 +201,13 @@ def generate_tasks(save, num_tasks):
 
 
 if __name__ == "__main__":
-    save = r"./data/data//non_normal_64_-10"
-    n_samples = 2000  # generate these many data points per task
+    a =1
+    b =+1 #ax+b
     num_tasks = 64
+    disc_factor1 = float(math.pi / 8.0)  # default math.pi / 8.0
+    disc_factor2 =float(math.pi / 32.0)  # default math.pi / 8.0
+    save = r"./data/data/11-02-2021/normal_64_a="+str(a)+"_b="+str(b)+'_tasks_'+str(num_tasks)+"_disc_factor1_"+str(round(disc_factor1,2))+"_disc_factor2_"+str(round(disc_factor2,2))
+    n_samples = 2000  # generate these many data points per task
+
 
     generate_tasks(save, num_tasks)

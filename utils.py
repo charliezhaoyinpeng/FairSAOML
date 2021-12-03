@@ -88,9 +88,11 @@ class Expert:
         # self.ft = None
         self.eps=eps
         self.d_feature=d_feature
+        self.w =0
 
     def print_expert(self):
-        print("expert CI length: ", self.length, " R: ", float(self.R), " C: ", float(self.C), " lamb: ", float(self.lamb), " p: ",float(self.p))
+        print("expert CI length: ", self.length, " R: ", float(self.R), " C: ", float(self.C), " lamb: ", float(self.lamb), " p: ",float(self.p),"w:",float(self.w))
+        return {"expert CI length: ": self.length, " R: ": float(self.R), " C: ": float(self.C), " lamb: ": float(self.lamb), " p: ":float(self.p),"w":float(self.w)}
 
     def get_X_by_inds(self, array, d_feature):
         frames = []
@@ -195,14 +197,16 @@ def get_data_by_Ct(C_t):
 
 
 if __name__ == "__main__":
-    T = 17
-    t = 1
+    T = 512
+    t = 257
     datapath = r"C:\Users\fengm\Desktop\pdrftml\data\data\syn_cls"
 
     # dgc()
     #
     ct = get_C_t(t)
-    print("ct", ct)
-    print("get_data_by_Ct(ct)", get_data_by_Ct(ct))
+    print(get_C_t(t))
+    print(len(get_C_t(t)))
+    # print("ct", ct)
+    # print("get_data_by_Ct(ct)", get_data_by_Ct(ct))
     print("dgc", dgc())
     # initialize_set_A()

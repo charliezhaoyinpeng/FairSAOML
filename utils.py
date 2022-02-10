@@ -180,6 +180,7 @@ def get_data_by_Ct(C_t):
 if __name__ == "__main__":
     T = 64
     t =1
+    datapath = r"your_path"
 
 
 

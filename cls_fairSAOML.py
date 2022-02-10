@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 from numpy import linalg as LA
 from eval_metrics_cls import *
-# fair strong adaptive online meta learning fairsaoml
 from cls_NN import *
 from cls_single_task import *
 from cls_params_table import *

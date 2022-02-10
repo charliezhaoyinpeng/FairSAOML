@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
 
 
-    dp,eop,acc,loss,dbc,loss_plus_dbc=fairSAOML(d_feature, lamb, tasks, data_path, dataset, save,
+    fairSAOML(d_feature, lamb, tasks, data_path, dataset, save,
             K, Kq, val_batch_size, num_neighbors,
             num_iterations, inner_steps, pd_updates,
             eta_1, eta_2, eps,radius,meta_eta_1,meta_eta_2,delta,net_dim)

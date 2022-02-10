@@ -56,14 +56,8 @@ def updata_P_in_experts(experts):
 def meta_update_for_experts(t, d_feature,
                 meta_net,meta_lamb,experts,active_amount, num_neighbors,K,Kq,
                 num_iterations, inner_steps, pd_updates,
-                eps, radius,meta_eta_1,meta_eta_2,delta,shift_time,meta_eta_1_shift_1,meta_eta_2_shift_1,meta_eta_1_shift_2,meta_eta_2_shift_2):
+                eps, radius,meta_eta_1,meta_eta_2,delta,shift_time):
 
-    if t>30 and t<=60:
-        meta_eta_1 = meta_eta_1_shift_1
-        meta_eta_2 = meta_eta_2_shift_1
-    elif t>60:
-        meta_eta_1 = meta_eta_1_shift_2
-        meta_eta_2 = meta_eta_2_shift_2
     temp1= list(meta_net.parameters())
 
     try:
@@ -109,7 +103,7 @@ def meta_update_for_experts(t, d_feature,
         temp_weights = [(w - meta_eta_1 * g) for w, g in zip(temp_weights, meta_grad_weights)]
         weights_norm = meta_net.e_norm(temp_weights)
 
-        if weights_norm > radius: ########## @@@@@@@@@@@@@ 改成一个参数 radius
+        if weights_norm > radius:
             temp_weights = list(nn.parameter.Parameter(item / weights_norm) for item in temp_weights)
         else:
             temp_weights = list(nn.parameter.Parameter(item) for item in temp_weights)
@@ -121,9 +115,8 @@ def meta_update_for_experts(t, d_feature,
             temp_lambda = temp_lambda + meta_eta_2 * meta_grad_lambda[0]
 
 
-    count =1
+
     for expert in experts:
-        count = count+1
         update_expert_RC(expert, temp_weights,temp_lambda, eps,d_feature)
 
     meta_net.assign(temp_weights)
@@ -179,7 +172,6 @@ def fairSAOML(d_feature, lamb, tasks, data_path, dataset, save,
     loss=[]
     dbc=[]
     loss_plus_dbc=[]
-    kqs=[]
     dataset_full_path = os.path.join(data_path , dataset)
     # set_A = []
     set_U = []

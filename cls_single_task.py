@@ -35,14 +35,8 @@ def mean(a):
 def validate_performance(t, d_feature, net, lamb, task,
                           K, Kq, num_neighbors,
                           inner_steps, pd_updates,
-                          eta_1, eta_2, eps,shift_time,eta_1_shift_1,eta_2_shift_1,eta_1_shift_2,eta_2_shift_2):
+                          eta_1, eta_2, eps):
     temp_weights = [w.clone() for w in list(net.parameters())]
-    if t> 30 and t<=60:
-        eta_1 = eta_1_shift_1
-        eta_2 = eta_2_shift_1
-    elif t>60:
-        eta_1 = eta_1_shift_2
-        eta_2 = eta_2_shift_2
     try:
         temp_lambda = torch.tensor([copy.deepcopy(lamb)], requires_grad=True, dtype=torch.float)
     except:
@@ -68,8 +62,8 @@ def validate_performance(t, d_feature, net, lamb, task,
     z_bar = torch.tensor(z_bar, dtype=torch.float).unsqueeze(1)
 
 
-    for co_update in range(1):
-        for step in range(1):
+    for co_update in range(pd_updates):
+        for step in range(inner_steps):
             y_hat = net.parameterised(X_s, temp_weights)
             fair = cal_dbc(torch.squeeze(z_s),torch.squeeze(y_hat))-eps
             loss = (-1.0) * torch.mean(y_s * torch.log(y_hat) + (ones - y_s) * torch.log(ones - y_hat))

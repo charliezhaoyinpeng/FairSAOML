@@ -4,12 +4,11 @@ from texttable import Texttable
 def hyper_params(d_feature, lamb, tasks, data_path, dataset,
             K, Kq, val_batch_size, num_neighbors,
             num_iterations, inner_steps, pd_updates,
-            eta_1, eta_2, eps,radius,meta_eta_1,meta_eta_2,delta,shift_time,eta_1_shift,eta_2_shift,meta_eta_1_shift,meta_eta_2_shift,net_dim):
+            eta_1, eta_2, eps,radius,meta_eta_1,meta_eta_2,delta,shift_time,net_dim):
     table = Texttable(120)
     table.set_deco(Texttable.HEADER)
     table.set_cols_width([30, 80])
     table.set_precision(6)
-    # table.set_cols_align(["l", "l"])
     table.add_rows([
         ["Parameters", "Values"],
         ["Data", dataset],
@@ -30,12 +29,7 @@ def hyper_params(d_feature, lamb, tasks, data_path, dataset,
         ["eps", eps],
         ["radius", radius],
         ["shift_time", shift_time],
-        ["eta_1_shift", eta_1_shift],
-        ["eta_2_shift", eta_2_shift],
-        ["meta_eta_1_shift", meta_eta_1_shift],
-        ["meta_eta_2_shift", meta_eta_2_shift],
         ["net_dim",net_dim],
-        # ["seed",seed]
 
     ])
     return table.draw().encode()

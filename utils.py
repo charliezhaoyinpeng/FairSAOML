@@ -8,7 +8,7 @@ global datapath
 import  torch
 from numpy import linalg as LA
 import os
-
+base =3
 def initialize_set_U(task_length, data_path, lamb, net, eps, d_feature):
     """
     Based on the task_length, we calculate the number of experts we need, and assign them the initial paramenter and data.
@@ -18,7 +18,6 @@ def initialize_set_U(task_length, data_path, lamb, net, eps, d_feature):
     global datapath
     datapath = data_path
     total_experts, ct = get_details_for_total_experts();
-    # print("total experts", total_experts,"length",ct)
     data = get_data_by_Ct(ct)
 
     U = []
@@ -28,13 +27,9 @@ def initialize_set_U(task_length, data_path, lamb, net, eps, d_feature):
         p = 1
         lamb = lamb
         net = net
-        # print("i",i,"cur_data",cur_data,'len',length)
         expert = Expert(t=1, length=length, data=cur_data, net=net, lamb=lamb, p=p,eps=eps,d_feature=d_feature)
         expert.update_S_G_eta()
         U.append(expert)
-    # print("total experts", total_experts, "length", ct)
-    #
-    # print("the initialize set A is",A)
 
     return U
 
@@ -46,27 +41,25 @@ def update_experts_at_t(A, t, lamb, net):
     ct = get_C_t(t)
     data = get_data_by_Ct(ct)
     active_number = len(
-        ct)  # If In is active at time t, In-1 must active.So we only need to know how many the length l in the ct set.
-    print("@@@@@@current time",t,"active_number",active_number)
-
+        ct)
     for i in range(active_number):
         cur_expert = A[i]
         length = len(ct[i])
-        if (t-1)%length ==0:  # means the current expert at the start of CI
+        j =1
+        while length>j:
+            j = j*base
+        if (t-1)%j ==0:
             cur_expert.R =0
             cur_expert.C =0
         update_data = data[str(length)]
         cur_expert.t = t
         cur_expert.data = update_data
-        # temp_weights = [w.clone() for w in list(net.parameters())]
-        # cur_expert.net = net
         temp_weights = [w.clone() for w in list(net.parameters())]
         cur_expert.weights = temp_weights
         cur_expert.lamb = lamb
         cur_expert.update_S_G_eta()
 
     return A, active_number
-
 
 class Expert:
     """
@@ -90,10 +83,6 @@ class Expert:
         self.d_feature=d_feature
         self.w =0
 
-    def print_expert(self):
-        print("expert CI length: ", self.length, " R: ", float(self.R), " C: ", float(self.C), " lamb: ", float(self.lamb), " p: ",float(self.p),"w:",float(self.w))
-        return {"expert CI length: ": self.length, " R: ": float(self.R), " C: ": float(self.C), " lamb: ": float(self.lamb), " p: ":float(self.p),"w":float(self.w)}
-
     def get_X_by_inds(self, array, d_feature):
         frames = []
         for index in array:
@@ -103,7 +92,7 @@ class Expert:
             frames.append(df)
         new_df = pd.concat(frames)
         X = new_df[new_df.columns[-d_feature:]].copy()
-        return X  ## non protective atribute
+        return X  #non protective atribute
 
     def update_S_G_eta(self):
         arraies = list()
@@ -117,17 +106,14 @@ class Expert:
         X_buffer = list()
         for target_array in target_arraies:
             X_buffer.append(self.get_X_by_inds(target_array, self.d_feature))
-        # print("xbuffer",X_buffer)
-        # print("lenxbuffuer",len(X_buffer))
         max_e_i = -1;
         for each in X_buffer:
             max_e_i = max(max_e_i,LA.norm(each))
         S = math.sqrt(1 + 2 * self.eps) - 1
-        # G = max(math.sqrt(d_feature) + S, max(X_buffer))
         G = max(math.sqrt(self.d_feature + 1) + S, max_e_i)
         self.S = S
         self.G = G
-        self.eta = S / (G * math.sqrt(self.length))  ###### update for each time t
+        self.eta = S / (G * math.sqrt(self.length))  ## update for each time t
 
 
 def dgc():
@@ -136,16 +122,15 @@ def dgc():
     :return: indices set of all dense geometric coverings
     """
     global T
-    # print(T)
-    k = int(np.log2(T))
+
+    k =int(math.log(T, base))
+
     res_list = list()
     for i in range(k):
         my_list = np.array(range(T)) + 1
-        n = 2 ** i
+        n = base ** i
         ans = [my_list[i * n:(i + 1) * n] for i in range((len(my_list) + n - 1) // n)]
-        # print(ans)
         res_list = res_list + ans
-    # print(res_list)
     return res_list
 
 
@@ -157,13 +142,11 @@ def get_C_t(t):
     :return: C_t, a subset of dgc
     """
     interval_inds = dgc()
-    # print("interval_inds",interval_inds)
     C_t = list()
     for item in interval_inds:
         if item[0] == t:
             C_t.append(item)
 
-    # print('C_t: ', C_t)
     return C_t
 
 
@@ -183,7 +166,6 @@ def get_data_by_Ct(C_t):
     ans = {'ct': C_t}
     for indset in C_t:
         key = str(len(indset))
-        # print("now key",key)
         frames = []
         for index in indset:
             pos_df = pd.read_csv(datapath + '/task' + str(index) + '/pos.csv')
@@ -192,21 +174,12 @@ def get_data_by_Ct(C_t):
             frames.append(df)
         values = pd.concat(frames)
         ans[key] = values
-    # print(ans)
     return ans
 
 
 if __name__ == "__main__":
-    T = 512
-    t = 257
+    T = 64
+    t =1
     datapath = r"C:\Users\fengm\Desktop\pdrftml\data\data\syn_cls"
 
-    # dgc()
-    #
-    ct = get_C_t(t)
-    print(get_C_t(t))
-    print(len(get_C_t(t)))
-    # print("ct", ct)
-    # print("get_data_by_Ct(ct)", get_data_by_Ct(ct))
-    print("dgc", dgc())
-    # initialize_set_A()
+

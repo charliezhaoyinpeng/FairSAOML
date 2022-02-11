@@ -220,7 +220,7 @@ def expert_level_supporting(t, d_feature, expert, task,
 
             grad_lamb = torch.autograd.grad(loss.sum(), temp_lambda)
 
-            temp_lambda = temp_lambda + expert_eta * grad_lamb[0]
+            temp_lambda = temp_lambda + 0.00001*expert_eta * grad_lamb[0]
 
             if temp_lambda.item() < 0:
                 temp_lambda = torch.tensor([0], requires_grad=True, dtype=torch.float)
